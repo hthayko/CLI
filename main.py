@@ -66,11 +66,11 @@ class CLI(cmd.Cmd):
     commands.setCatBatch(int(self.cmdTokens[1]), int(self.cmdTokens[2]))
 
   def do_LDA(self, line):
-    # if(self.nArgs != 2 and ): 
-    #   self.default(line)
-    #   return False
-    # commands.runLDA(int(self.cmdTokens[1]), int(self.cmdTokens[2]), 100000)
-    commands.runLDA(None, int(self.cmdTokens[1]), 100000)
+    if(self.nArgs != 2): 
+      self.default(line)
+      return False
+    commands.runLDA(int(self.cmdTokens[1]), int(self.cmdTokens[2]), 100000)
+    # commands.runLDA(None, int(self.cmdTokens[1]), 100000)
 
   def do_topics(self, line):
     if(self.nArgs != 0): 
@@ -83,6 +83,12 @@ class CLI(cmd.Cmd):
       self.default(line)
       return False
     commands.ldaMessagesByTopic(int(self.cmdTokens[1]), int(self.cmdTokens[2]))
+
+  def do_prompt(self, line):
+    if(self.nArgs != 2): 
+      self.default(line)
+      return False
+    commands.promptInf(int(self.cmdTokens[1]), int(self.cmdTokens[2]))
 
   def default(self, line):
     print redText("the command " + line + " was not found.")
@@ -109,6 +115,7 @@ class CLI(cmd.Cmd):
     print blueText("LDA <infId> <k>:") + " run LDA with k topics for influencer's messages"
     print blueText("topics:") + " show topics discovered by LDA, each with 10 rep words"
     print blueText("topic_all k n:") + " show topic k with its best n samples"
+    print blueText("prompt <inf_id> <cat_id>:") + " prompt influencer to respond to category"    
     print blueText("exit:") + " exit the program"
 
 if __name__ == '__main__':  

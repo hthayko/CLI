@@ -93,11 +93,11 @@ def addResponse(infId, catId, response):
   print greenText("DONE")
 
 def runLDA(infId, k, useN):
-  # messagesInfo = getMessages(infId)
-  # messages = [m["message"] for m in messagesInfo]
-  # ids = [m["id"] for m in messagesInfo]
-  # ldaManager.runLDA((messages, ids), k, useN)
-  ldaManager.runLDA(None, k, useN)
+  messagesInfo = getMessages(infId)
+  messages = [m["message"] for m in messagesInfo]
+  ids = [m["id"] for m in messagesInfo]
+  ldaManager.runLDA((messages, ids), k, useN)
+  # ldaManager.runLDA(None, k, useN)
   ldaTopics()
 
 def ldaTopics():
@@ -122,8 +122,15 @@ def setCat(catId, mesId):
   resp = requests.put(baseUrl + "/update_cli_messages", json = {
     mesId : catId
     })
-  print resp.text
-  print resp.content
+  if not checkStatus(resp):
+    return
+  print greenText("DONE")
+
+def promptInf(infId, catId):  
+  resp = requests.put(baseUrl + "/prompt_influencer_by_cat_id", json = {
+    "influencer_id" : infId,
+    "category_id" : catId
+    })
   if not checkStatus(resp):
     return
   print greenText("DONE")
