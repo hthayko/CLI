@@ -11,7 +11,7 @@ class CLI(cmd.Cmd):
   #   # self.prompt = "CLI"
   #   a = 1
   def precmd(self, line):
-    self.cmdTokens = line.rsplit(" ")
+    self.cmdTokens = [t.strip() for t in line.rsplit(" ") if t.strip() != ""]
     self.nArgs = len(self.cmdTokens) - 1
     return line
 
@@ -101,6 +101,9 @@ class CLI(cmd.Cmd):
   def do_exit(self, line):     
       print "\n"
       return True
+
+  def emptyline(self):
+    pass
 
   def printOptions(self):
     print blueText("\n------------------------------------------------------------------")

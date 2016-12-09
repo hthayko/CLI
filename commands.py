@@ -33,6 +33,7 @@ def listInfluencers():
   if not checkStatus(resp):
     return
   data = resp.json()["data"]  
+  data = sorted(data, key = lambda x: int(x["id"]))
   for inf in data:
     print "%s: %s %s(%s)" % (inf["id"], inf["first_name"], (inf["last_name"] or ""), inf["main_phone_number"])
   print greenText("DONE")
@@ -45,6 +46,7 @@ def listCategories(infId):
   if not checkStatus(resp):
     return  
   data = resp.json()["data"]["messages"]
+  data = sorted(data, key = lambda x: int(x["id"]))
   for cat in data:
     print "%s: %s" % (cat["id"], cat["name"])
   print greenText("DONE")
@@ -94,7 +96,7 @@ def addResponse(infId, catId, response):
 
 def runLDA(infId, k, useN):
   messagesInfo = getMessages(infId)
-  messages = [m["message"] for m in messagesInfo]
+  messages = [m["message"].encode('utf-8') for m in messagesInfo]
   ids = [m["id"] for m in messagesInfo]
   ldaManager.runLDA((messages, ids), k, useN)
   # ldaManager.runLDA(None, k, useN)
