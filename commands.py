@@ -4,10 +4,10 @@ import requests
 from LDAManager import LDAManager
 import traceback
 
-baseUrl = "http://node-beast-dev.herokuapp.com/api/cli"
+baseUrl = "http://node-beast-dev.herokuapp.com/api/cli" # will be overridden by main
 ldaManager = LDAManager()
 
-def getMessages(infId, limit = 100):
+def getMessages(infId, limit = 2000):
   resp = requests.get(baseUrl + "/get_phrases_with_cli_status", params={
     "influencer_id" : infId, 
     "limit" : limit, 
@@ -23,8 +23,9 @@ def checkStatus(resp):
     if(respObj["status"] != "success"):
       raise Exception("ERROR: status of the request is:" + respObj["status"])
   except Exception as e:
-    print redText(str(e))
-    traceback.print_exc()
+    print redText("Bad Request")
+    # print redText(str(e))
+    # traceback.print_exc()
     return False
   return True
 
@@ -95,11 +96,14 @@ def addResponse(infId, catId, response):
   print greenText("DONE")
 
 def runLDA(infId, k, useN):
-  messagesInfo = getMessages(infId)
-  messages = [m["message"].encode('utf-8') for m in messagesInfo]
-  ids = [m["id"] for m in messagesInfo]
-  ldaManager.runLDA((messages, ids), k, useN)
-  # ldaManager.runLDA(None, k, useN)
+  if infId == -1:
+    ldaManager.runLDA(None, k, useN)
+  else:
+    messagesInfo = getMessages(infId)
+    print "[DEBUG] Got {} messages".format(len(messagesInfo))
+    messages = [m["message"].encode('utf-8') for m in messagesInfo]
+    ids = [m["id"] for m in messagesInfo]
+    ldaManager.runLDA((messages, ids), k, useN)   
   ldaTopics()
 
 def ldaTopics():
@@ -116,6 +120,7 @@ def ldaMessagesByTopic(topicId, n):
 
 def listMessages(infId):
   messages = getMessages(infId)
+  messages = sorted(messages, key = lambda x: int(x["id"]))  
   for m in messages:
     print "%s: %s" % (m["id"], m["message"])
   print greenText("DONE")

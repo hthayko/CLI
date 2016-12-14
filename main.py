@@ -121,7 +121,16 @@ class CLI(cmd.Cmd):
     print blueText("prompt <inf_id> <cat_id>:") + " prompt influencer to respond to category"    
     print blueText("exit:") + " exit the program"
 
-if __name__ == '__main__':  
+def getBaseUrl(argv):
+  if len(argv) > 1 and argv[1] == "staging":
+    return "http://node-beast-staging.herokuapp.com/api/cli"
+  elif len(argv) > 1 and argv[1] == "prod":
+    return "http://node-beast-prod.herokuapp.com/api/cli"
+  else:
+    return "http://node-beast-dev.herokuapp.com/api/cli"    
+
+if __name__ == '__main__':
+  commands.baseUrl = getBaseUrl(sys.argv)
   cli = CLI()  
   cli.printOptions()  
   cli.prompt = greenText("(CLI)>>> ")
