@@ -147,7 +147,7 @@ def setCatBatch(catId, topicId):
 
 def sendPush(infId, message):
   print message
-  resp = requests.get(baseUrl + "/sendPush", json = {
+  resp = requests.get(baseUrl + "/sendPush", params = {
     "influencer_id" : infId,
     "message" : message
     })
