@@ -65,21 +65,14 @@ def listResponses(infId, catId):
     print [str(ri) for ri in r["response"]]
   print greenText("DONE")
 
-def addCategory(infId, catName):
+def addCategory(infId, catName, catDisplayName):
+  if catDisplayName == "" or catName == "":
+    print redText("category name or display name cannot be empty")
+    return 
   resp = requests.post(baseUrl + "/add_cat_by_name_inf", json = {
     "influencer_id" : infId, 
-    "name" : catName
-    })
-  if not checkStatus(resp):
-    return
-  print greenText("DONE")
-
-
-def addResponse(infId, catId, response):
-  resp = requests.post(baseUrl + "/add_resp_by_cat_inf", json = {
-    "influencer_id" : infId,
-    "category_id" : catId,
-    "responses" : [response]
+    "category_name" : catName,
+    "display_name" : catDisplayName
     })
   if not checkStatus(resp):
     return
@@ -151,3 +144,13 @@ def setCatBatch(catId, topicId):
   resp = requests.put(baseUrl + "/update_cli_messages", json = batchSetData)
   if not checkStatus(resp):
     return
+
+def sendPush(infId, message):
+  print message
+  resp = requests.get(baseUrl + "/sendPush", json = {
+    "influencer_id" : infId,
+    "message" : message
+    })
+  if not checkStatus(resp):
+    return
+  print greenText("DONE")

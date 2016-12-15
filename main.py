@@ -38,7 +38,8 @@ class CLI(cmd.Cmd):
       self.default(line)
       return False
     catCaption = raw_input(greenText("Type the new category name:"))
-    commands.addCategory(int(self.cmdTokens[1]), catCaption)
+    catDisplay = raw_input(greenText("Type the new category DISPLAY name:"))
+    commands.addCategory(int(self.cmdTokens[1]), catCaption, catDisplay)
 
   def do_add_resp(self, line):
     if(self.nArgs != 2): 
@@ -90,6 +91,13 @@ class CLI(cmd.Cmd):
       return False
     commands.promptInf(int(self.cmdTokens[1]), int(self.cmdTokens[2]))
 
+  def do_send_push(self, line):
+    if(self.nArgs != 1):
+      self.default(line)
+      return False
+    message = raw_input(greenText("Type the push message:"))      
+    commands.sendPush(int(self.cmdTokens[1]), message)
+
   def default(self, line):
     print redText("the command " + line + " was not found.")
     self.printOptions()
@@ -107,18 +115,19 @@ class CLI(cmd.Cmd):
 
   def printOptions(self):
     print blueText("\n------------------------------------------------------------------")
-    print blueText("inf:") + " see list of influencers"
-    print blueText("cat <inf_id>:") + " see list of categories for <inf_id>"
-    print blueText("mes <inf_id>:") + " see list of messages for <inf_id>"
-    print blueText("set_cat_batch <cat_id> <topic>:") + " set category of all messages in topic"
-    print blueText("set_cat <cat_id> <mes_id>:") + " set category of a single message"
-    print blueText("resp <inf_id> <cat_id>:") + " see list of responses for influencers category"
     print blueText("add_cat <inf_id>:") + " add category for influencer"
     print blueText("add_resp <inf_id> <cat_id>:") + " add response to influencer's category"
+    print blueText("cat <inf_id>:") + " see list of categories for <inf_id>"
     print blueText("LDA <infId> <k>:") + " run LDA with k topics for influencer's messages"
+    print blueText("mes <inf_id>:") + " see list of messages for <inf_id>"
+    print blueText("prompt <inf_id> <cat_id>:") + " prompt influencer to respond to category"    
+    print blueText("inf:") + " see list of influencers"
+    print blueText("resp <inf_id> <cat_id>:") + " see list of responses for influencers category"
+    print blueText("set_cat_batch <cat_id> <topic>:") + " set category of all messages in topic"
+    print blueText("set_cat <cat_id> <mes_id>:") + " set category of a single message"
+    print blueText("send_push <inf_id>:") + " send custom push notification to influencer"
     print blueText("topics:") + " show topics discovered by LDA, each with 10 rep words"
     print blueText("topic_all k n:") + " show topic k with its best n samples"
-    print blueText("prompt <inf_id> <cat_id>:") + " prompt influencer to respond to category"    
     print blueText("exit:") + " exit the program"
 
 def getBaseUrl(argv):
