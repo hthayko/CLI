@@ -62,7 +62,7 @@ def listResponses(infId, catId):
     return
   data = resp.json()["data"]
   for r in data:
-    print [str(ri) for ri in r["response"]]
+    print [ri for ri in r["response"]]
   print greenText("DONE")
 
 def addCategory(infId, catName, catDisplayName):
