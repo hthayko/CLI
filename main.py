@@ -61,10 +61,10 @@ class CLI(cmd.Cmd):
     commands.setCat(int(self.cmdTokens[1]), int(self.cmdTokens[2]))
 
   def do_set_cat_batch(self, line):
-    if(self.nArgs != 2): 
+    if(self.nArgs != 3): 
       self.default(line)
       return False
-    commands.setCatBatch(int(self.cmdTokens[1]), int(self.cmdTokens[2]))
+    commands.setCatBatch(int(self.cmdTokens[1]), int(self.cmdTokens[2]), float(self.cmdTokens[3]))
 
   def do_LDA(self, line):
     if(self.nArgs != 2): 
@@ -123,7 +123,7 @@ class CLI(cmd.Cmd):
     print blueText("prompt <inf_id> <cat_id>:") + " prompt influencer to respond to category"    
     print blueText("inf:") + " see list of influencers"
     print blueText("resp <inf_id> <cat_id>:") + " see list of responses for influencers category"
-    print blueText("set_cat_batch <cat_id> <topic>:") + " set category of all messages in topic"
+    print blueText("set_cat_batch <cat_id> <topic> <threshold>:") + " set category of all messages with in topic (>threshold)"
     print blueText("set_cat <cat_id> <mes_id>:") + " set category of a single message"
     print blueText("send_push <inf_id>:") + " send custom push notification to influencer"
     print blueText("topics:") + " show topics discovered by LDA, each with 10 rep words"

@@ -64,16 +64,25 @@ class LDAManager :
         topic_words = numpy.array(self.modelVocab)[numpy.argsort(topic_dist)][:-n_top_words:-1]
         print('Topic {}: {}, (contains {} phrases)'.format(i, ', '.join(topic_words), self.topicCounts[i]))
 
-  def getBestByTopic(self, topic, bestN, shouldPrint = False):
+  def getBestByTopic(self, topic, filterBy, shouldPrint = False):
+    def filterMessages(tm, filterBy):
+      if "bestN" in filterBy:
+        return tm[:filterBy["bestN"]]
+      elif "threshold" in filterBy:
+        return [m for m in topicMessages if m[2] >= filterBy["threshold"]]
+      else:
+        return tm[:100] # if nothing provided, return first 100
+
     doc_topic = self.model.doc_topic_
     n = len(self.modelMessages)
     topicMessages = [(self.ids[i], i, doc_topic[i].max()) for i in range(n) if doc_topic[i].argmax() == topic]
     topicMessages = sorted(topicMessages, key = lambda x: -x[2])
+    bestOf = filterMessages(topicMessages, filterBy)
     if shouldPrint:
-      for i in range(min(bestN, len(topicMessages))):
+      for i in range(len(bestOf)):
         mInd = topicMessages[i][1]
         mAcc = topicMessages[i][2]
         print("{} (top topic: {}, accuracy: {})".format(self.modelMessages[mInd], \
           topic, mAcc))
     else:
-      return [(m[0], m[2]) for m in topicMessages[:bestN]] 
+      return [(m[0], m[2]) for m in bestOf]

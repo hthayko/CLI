@@ -109,7 +109,7 @@ def ldaMessagesByTopic(topicId, n):
   if not ldaManager.model:
     print redText("TASK CANCELLED: Need to first run LDA...")
     return
-  ldaManager.getBestByTopic(topicId, n, True)
+  ldaManager.getBestByTopic(topicId, {"bestN" : 100}, True)
 
 def listMessages(infId):
   messages = getMessages(infId)
@@ -135,15 +135,17 @@ def promptInf(infId, catId):
     return
   print greenText("DONE")
 
-def setCatBatch(catId, topicId):
+def setCatBatch(catId, topicId, threshold):
   if not ldaManager.model:
     print redText("TASK CANCELLED: Need to first run LDA...")
     return  
-  bestByTopic = ldaManager.getBestByTopic(topicId, 100)
+  bestByTopic = ldaManager.getBestByTopic(topicId, {"threshold" : threshold})
   batchSetData = dict((m[0], catId) for m in bestByTopic)
   resp = requests.put(baseUrl + "/update_cli_messages", json = batchSetData)
   if not checkStatus(resp):
     return
+  else:
+    print greenText("Set category '{}' for {} message(s)".format(catId, len(batchSetData)))
 
 def sendPush(infId, message):
   print message
