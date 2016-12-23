@@ -7,14 +7,21 @@ import traceback
 baseUrl = "http://node-beast-dev.herokuapp.com/api/cli" # will be overridden by main
 ldaManager = LDAManager()
 
-def getMessages(infId, limit = 2000):
-  resp = requests.get(baseUrl + "/get_phrases_with_cli_status", params={
-    "influencer_id" : infId, 
-    "limit" : limit, 
-    "offset" : 0})
-  if not checkStatus(resp):
-    return
-  messages = resp.json()["data"]["messages"]
+def getMessages(infId, limit = 1000):
+  offset = 0
+  messages = []
+  while 1:
+    resp = requests.get(baseUrl + "/get_phrases_with_cli_status", params={
+      "influencer_id" : infId, 
+      "limit" : limit, 
+      "offset" : offset})
+    if not checkStatus(resp):
+      return None
+    jsonData = resp.json()["data"]
+    messages = messages + jsonData["messages"]
+    offset += len(jsonData["messages"])
+    if len(jsonData["messages"]) == 0:
+      break
   return messages
 
 def checkStatus(resp):
@@ -109,14 +116,14 @@ def ldaMessagesByTopic(topicId, n):
   if not ldaManager.model:
     print redText("TASK CANCELLED: Need to first run LDA...")
     return
-  ldaManager.getBestByTopic(topicId, {"bestN" : 100}, True)
+  ldaManager.getBestByTopic(topicId, {"bestN" : n}, True)
 
 def listMessages(infId):
   messages = getMessages(infId)
-  messages = sorted(messages, key = lambda x: int(x["id"]))  
-  for m in messages:
+  messages = sorted(messages, key = lambda x: -int(x["id"]))  
+  for m in messages[:100]:
     print "%s: %s" % (m["id"], m["message"])
-  print greenText("DONE")
+  print greenText("Fetched {} messages".format(len(messages)))
 
 def setCat(catId, mesId):
   resp = requests.put(baseUrl + "/update_cli_messages", json = {
