@@ -24,6 +24,41 @@ def getMessages(infId, limit = 1000):
       break
   return messages
 
+def getGMCardMessages(cardId, limit = 1000):
+  offset = 0
+  messages = []
+  while 1:
+    resp = requests.get(baseUrl + "/card/answers/" + str(cardId), params={
+      "limit" : limit, 
+      "offset" : offset})
+    if not checkStatus(resp):
+      print redText("NO MESSAGES AVAILABLE")
+      return []    
+    jsonData = resp.json()["data"]
+    messages = messages + jsonData
+    offset += len(jsonData)
+    if len(jsonData) == 0:
+      break
+  return messages  
+
+def printNiceConv(conv):
+  convId = conv[0]["conversation_id"]
+  infId = conv[0]["influencer_id"]
+  userId = conv[0]["user_id"]
+  print "\n<<<<<<< Conversation {} between influencer {} and user {}. (Green is the influencer)".format(convId, infId, userId)
+  count = min(10, len(conv))
+  if (len(conv) > 10):
+    print "... skipped {} message(s) ...".format(len(conv) - 10)
+  for i in range(count):
+    ind = count - 1 - i
+    mes = conv[ind]
+    if mes["message"] is None:
+      mes["message"] = "IMAGE: %s" % (mes["media"])
+    if mes["sent_by_user"]:
+      print blueText("%s [%s]" % (mes["message"], mes["time_sent"]))
+    else:
+      print greenText("%s [%s]" % (mes["message"], mes["time_sent"]))
+
 def checkStatus(resp):
   try:
     respObj = resp.json()
@@ -72,18 +107,47 @@ def listResponses(infId, catId):
     print [ri for ri in r["response"]]
   print greenText("DONE")
 
-def addCategory(infId, catName, catDisplayName):
+def listConv(convIds):
+  resp = requests.get(baseUrl + "/chats/conversations", params = {
+    "conversation_ids[]" : convIds, 
+    "limit" : 100})
+  if not checkStatus(resp):
+    return
+  data = resp.json()["data"]
+  for (infId, conv) in data.iteritems():
+    printNiceConv(conv)
+
+def listBFNL(infId):
+  resp = requests.get(baseUrl + "/bfnl/" + str(infId), params = {
+    "limit" : 10
+    })
+  if not checkStatus(resp):
+    return
+  data = resp.json()["data"]
+  convIds = [c["conversation_id"] for c in data]
+  if len(convIds) > 0:
+    listConv(convIds)
+
+def addCatHelper(infId, catName, catDisplayName, isCard):
   if catDisplayName == "" or catName == "":
     print redText("category name or display name cannot be empty")
     return 
   resp = requests.post(baseUrl + "/add_cat_by_name_inf", json = {
     "influencer_id" : infId, 
     "category_name" : catName,
-    "display_name" : catDisplayName
+    "display_name" : catDisplayName,
+    "is_card" : isCard
     })
   if not checkStatus(resp):
     return
-  print greenText("DONE")
+  data = resp.json()["data"]
+  if isCard:
+    print greenText("Added group with ID:{}".format(data["id"]))  
+  else:
+    print greenText("Added category with ID:{}".format(data["id"]))  
+
+def addCategory(infId, catName, catDisplayName):
+  addCatHelper(infId, catName, catDisplayName, False)
 
 def addResponse(infId, catId, response):
   resp = requests.post(baseUrl + "/add_resp_by_cat_inf", json = {
@@ -104,6 +168,14 @@ def runLDA(infId, k, useN):
     messages = [m["message"].encode('utf-8') for m in messagesInfo]
     ids = [m["id"] for m in messagesInfo]
     ldaManager.runLDA((messages, ids), k, useN)   
+  ldaTopics()
+
+def runLDAForGMCard(cardId, k, useN):
+  messagesInfo = getGMCardMessages(cardId)
+  print "[DEBUG] Got {} messages".format(len(messagesInfo))
+  messages = [m["message"].encode('utf-8') for m in messagesInfo]
+  ids = [m["id"] for m in messagesInfo]
+  ldaManager.runLDA((messages, ids), k, useN)   
   ldaTopics()
 
 def ldaTopics():
@@ -155,7 +227,6 @@ def setCatBatch(catId, topicId, threshold):
     print greenText("Set category '{}' for {} message(s)".format(catId, len(batchSetData)))
 
 def sendPush(infId, message):
-  print message
   resp = requests.get(baseUrl + "/sendPush", params = {
     "influencer_id" : infId,
     "message" : message
@@ -163,3 +234,112 @@ def sendPush(infId, message):
   if not checkStatus(resp):
     return
   print greenText("DONE")
+
+def newCardBFNL(infId, convId):
+  resp = requests.post(baseUrl + "/new_card", json = {
+    "influencer_id" : infId,
+    "type" : "conversation",
+    "conversation_id" : convId
+    })
+  if not checkStatus(resp):
+    return
+  print greenText("DONE")
+
+def newCardOutbound(infId, omPrompt):
+  resp = requests.post(baseUrl + "/new_card", json = {
+    "influencer_id" : infId,
+    "type" : "message_all",
+    "relevant_info" : omPrompt
+    })
+  if not checkStatus(resp):
+    return
+  print greenText("DONE")
+
+def listBFNLCards(infId):
+  resp = requests.get(baseUrl + "/cards/" + str(infId), params = {
+    "is_active" : True,
+    "state" : "new"
+    })
+  if not checkStatus(resp):
+    return
+  cards = resp.json()["data"]["data"]
+  cardsBFNL = [c for c in cards if c["type"] == "conversation"]
+  for c in cardsBFNL:
+    print ("BFNL CARD ID: {}: Between inf {} and user {}, conv id: {}".
+      format(c["card_id"], c["influencer_id"], c["user_id"], c["conversation_id"]))
+  print greenText("DONE")
+
+
+def listGMCardsHelper(infId, isActive, state):
+  resp = requests.get(baseUrl + "/cards/" + str(infId), params = {
+    "is_active" : isActive,
+    "state" : state
+    })
+  if not checkStatus(resp):
+    return
+  cards = resp.json()["data"]["data"]
+  cardsGM = [c for c in cards if c["type"] == "grouped_message"]
+  for c in cardsGM:
+    showGMCard(c)
+
+def listGMCards(infId):
+  listGMCardsHelper(infId, True, "new")
+
+def showGMCard(gmCard):
+  resp = requests.get(baseUrl + "/cards/grouped_message/" + str(gmCard["card_id"]), params = {})
+  if not checkStatus(resp):
+    return
+  data = resp.json()["data"]
+  mes = gmCard["message"]
+  if mes is None:
+    mes = "IMAGE: %s" % (gmCard["media"])
+  print "\n<<<<<<< GM CARD ID: {}: (Green is the influencer)".format(gmCard["card_id"])
+  print greenText(mes)
+  for g in data:
+    print blueText(g["display_name"])
+    if g["response"] is not None:
+      print greenText(g["response"][0])
+
+def listOMCards(infId):
+  resp = requests.get(baseUrl + "/cards/" + str(infId), params = {
+    "is_active" : True,
+    "state" : "new"
+    })
+  if not checkStatus(resp):
+    return
+  cards = resp.json()["data"]["data"]
+  cardsOM = [c for c in cards if c["type"] == "message_all"]
+  for c in cardsOM:
+    print ("OUTBOUND MESSAGE CARD ID: {}: From inf {}: ". format(c["card_id"], c["influencer_id"]) +
+      greenText(c["relevant_info"]))
+  print greenText("DONE")
+
+
+# list NEW,  INACTIVE GM cards + DONE, ACTIVE cards
+def listRevivableGMCards(infId):
+  listGMCardsHelper(infId, False, "new")
+  listGMCardsHelper(infId, True, "done")
+
+def reopenGMCard(cardId, groupId):
+  resp = requests.post(baseUrl + "/reopen_card", json = {
+    "card_id" : cardId, 
+    "group_id" : groupId
+    })
+  if not checkStatus(resp):
+    return
+  print greenText("DONE")
+
+def addGMGroup(infId, groupName, groupDisplayName):
+  addCatHelper(infId, groupName, groupDisplayName, True)
+
+def setGMGroup(groupId, topicId, threshold):
+  if not ldaManager.model:
+    print redText("TASK CANCELLED: Need to first run LDA...")
+    return  
+  bestByTopic = ldaManager.getBestByTopic(topicId, {"threshold" : threshold})
+  batchSetData = dict((m[0], groupId) for m in bestByTopic)
+  resp = requests.put(baseUrl + "/update_cli_messages", json = batchSetData)
+  if not checkStatus(resp):
+    return
+  else:
+    print greenText("Set group '{}' for {} message(s)".format(groupId, len(batchSetData)))

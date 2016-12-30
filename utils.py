@@ -9,10 +9,13 @@ class bcolors:
   UNDERLINE = '\033[4m'
 
 def blueText(text):
-  return bcolors.OKBLUE + text + bcolors.ENDC
+  return "%s%s%s" % (bcolors.OKBLUE, text, bcolors.ENDC)
 
 def greenText(text):
-  return bcolors.OKGREEN + text + bcolors.ENDC
+  return "%s%s%s" % (bcolors.OKGREEN, text, bcolors.ENDC)
 
 def redText(text):
-  return bcolors.FAIL + text + bcolors.ENDC
+  return "%s%s%s" % (bcolors.FAIL, text, bcolors.ENDC)
+
+def fixedLengthStr(str, n):
+  return str + "".join([" " for i in range(n - len(str))])
