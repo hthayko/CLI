@@ -3,6 +3,7 @@ from flask import jsonify, json
 import requests
 from LDAManager import LDAManager
 import traceback
+from pprint import pprint
 
 baseUrl = "http://node-beast-dev.herokuapp.com/api/cli" # will be overridden by main
 ldaManager = LDAManager()
@@ -107,26 +108,44 @@ def listResponses(infId, catId):
     print [ri for ri in r["response"]]
   print greenText("DONE")
 
-def listConv(convIds):
+def getConversations(convIds):
   resp = requests.get(baseUrl + "/chats/conversations", params = {
     "conversation_ids[]" : convIds, 
     "limit" : 100})
   if not checkStatus(resp):
     return
   data = resp.json()["data"]
-  for (infId, conv) in data.iteritems():
+  return data
+
+def listConv(convIds):
+  convs = getConversations(convIds)
+  for (convId, conv) in data.iteritems():
     printNiceConv(conv)
 
-def listBFNL(infId):
+def newCardBFNL(infId):
   resp = requests.get(baseUrl + "/bfnl/" + str(infId), params = {
-    "limit" : 10
+    "limit" : 100
     })
   if not checkStatus(resp):
     return
   data = resp.json()["data"]
+  bfnlCardsMade = 0
   convIds = [c["conversation_id"] for c in data]
-  if len(convIds) > 0:
-    listConv(convIds)
+  if len(convIds) == 0:
+    print redText("No Conversations found")
+    return
+  for i in range(0, len(convIds)):
+    cId = convIds[i]
+    conv = getConversations([cId])
+    printNiceConv(conv[str(cId)])
+    userInput = raw_input(greenText("Make a BFNL card? (Y/N/exit)"))
+    if userInput == "Y":      
+      addNewCardBFNL(infId, cId)
+      bfnlCardsMade += 1
+      print greenText("{} cards made so far".format(bfnlCardsMade))
+    elif userInput == "exit":
+      print greenText("{} cards made so far".format(bfnlCardsMade))
+      break
 
 def addCatHelper(infId, catName, catDisplayName, isCard):
   if catDisplayName == "" or catName == "":
@@ -149,11 +168,10 @@ def addCatHelper(infId, catName, catDisplayName, isCard):
 def addCategory(infId, catName, catDisplayName):
   addCatHelper(infId, catName, catDisplayName, False)
 
-def addResponse(infId, catId, response):
-  resp = requests.post(baseUrl + "/add_resp_by_cat_inf", json = {
-    "influencer_id" : infId,
-    "category_id" : catId,
-    "responses" : [response]
+def addResponse(catId, response):
+  resp = requests.post(baseUrl + "/category/add_response", json = {
+    "id" : catId,
+    "message" : response
     })
   if not checkStatus(resp):
     return
@@ -235,7 +253,7 @@ def sendPush(infId, message):
     return
   print greenText("DONE")
 
-def newCardBFNL(infId, convId):
+def addNewCardBFNL(infId, convId):
   resp = requests.post(baseUrl + "/new_card", json = {
     "influencer_id" : infId,
     "type" : "conversation",
@@ -243,7 +261,6 @@ def newCardBFNL(infId, convId):
     })
   if not checkStatus(resp):
     return
-  print greenText("DONE")
 
 def newCardOutbound(infId, omPrompt):
   resp = requests.post(baseUrl + "/new_card", json = {
@@ -343,3 +360,28 @@ def setGMGroup(groupId, topicId, threshold):
     return
   else:
     print greenText("Set group '{}' for {} message(s)".format(groupId, len(batchSetData)))
+
+def sendAllFraction(infId, percent, message):
+  if not(percent % 10 == 0 and percent > 0 and percent <= 100):
+    print redText("Percent should be multiple of 10, in between 10 and 100")
+    return
+  sentToCount = 0
+  for i in range(percent / 10):
+    resp = requests.put(baseUrl + "/send_message_to_convs_by_pn_end", json = {
+      "number_ending" : i,
+      "message" : message,
+      "influencer_id" : infId
+      })
+    if not checkStatus(resp):
+      return
+    sentToCount += resp.json()["count"]
+    print greenText("Sent to {}%".format((i + 1) * 10))
+  print greenText("DONE: Sent to {} users".format(sentToCount))
+
+def onboardInf(infData):
+  resp = requests.post(baseUrl + "/add_onboarding_info", json = infData)
+  if not checkStatus(resp):
+    return
+  print greenText("DONE")
+
+

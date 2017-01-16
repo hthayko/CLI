@@ -4,6 +4,8 @@ from utils import *
 import commands
 import traceback
 import cmd
+import json
+from pprint import pprint
 
 commandsInfo = [
   {
@@ -13,14 +15,9 @@ commandsInfo = [
     },
     {
     "name" : "add_resp",
-    "params" : "<inf_id> <cat_id>", 
-    "description" : "add response to influencer's category"
+    "params" : "<cat_id>", 
+    "description" : "add response to category"
     },
-    {
-    "name" : "bfnl",
-    "params" : "<inf_id>", 
-    "description" : "see list of longest conversations for <inf_id>"
-    },    
     {
     "name" : "cat",
     "params" : "<inf_id>", 
@@ -85,17 +82,22 @@ commandsInfo = [
     "name" : "mes",
     "params" : "<inf_id>", 
     "description" : "see list of messages for <inf_id>"
-    },
+    },    
     {
     "name" : "new_card_bfnl",
-    "params" : "<inf_id> <conv_id>", 
-    "description" : "add new bfnl card"
+    "params" : "<inf_id>", 
+    "description" : "add new bfnl cards"
     },
     {
     "name" : "new_card_outbound",
     "params" : "<inf_id>", 
     "description" : "add new outbound card"
     },
+    {
+    "name" : "onboard_influencer",
+    "params" : "<fn>", 
+    "description" : "send the new influencer config file to server"
+    },    
     {
     "name" : "prompt",
     "params" : "<inf_id> <cat_id>", 
@@ -121,6 +123,11 @@ commandsInfo = [
     "params" : "<inf_id>", 
     "description" : "send custom push notification to influencer"
     },
+    {
+    "name" : "send_all_fraction",
+    "params" : "<inf_id> <percent>", 
+    "description" : "do message all for <inf_id>, percent should be multiples of 10"
+    },    
     {
     "name" : "topics",
     "params": "", 
@@ -160,12 +167,6 @@ class CLI(cmd.Cmd):
       return False
     commands.listCategories(int(self.cmdTokens[1]))
 
-  def do_bfnl(self, line):
-    if (self.nArgs != 1):
-      self.default(line)
-      return False
-    commands.listBFNL(int(self.cmdTokens[1]))
-
   def do_conv(self, line):
     if (self.nArgs != 1):
       self.default(line)
@@ -173,10 +174,10 @@ class CLI(cmd.Cmd):
     commands.listConv([int(self.cmdTokens[1])])
 
   def do_new_card_bfnl(self, line):
-    if (self.nArgs != 2):
+    if (self.nArgs != 1):
       self.default(line)
       return False
-    commands.newCardBFNL(int(self.cmdTokens[1]), int(self.cmdTokens[2]))
+    commands.newCardBFNL(int(self.cmdTokens[1]))
 
   def do_new_card_outbound(self, line):
     if (self.nArgs != 1):
@@ -200,11 +201,11 @@ class CLI(cmd.Cmd):
     commands.addCategory(int(self.cmdTokens[1]), catCaption, catDisplay)
 
   def do_add_resp(self, line):
-    if(self.nArgs != 2): 
+    if(self.nArgs != 1): 
       self.default(line)
       return False
     response = raw_input(greenText("Type the new response:"))
-    commands.addResponse(int(self.cmdTokens[1]), int(self.cmdTokens[2]), response)
+    commands.addResponse(int(self.cmdTokens[1]), response)
 
   def do_mes(self, line):
     if(self.nArgs != 1): 
@@ -306,6 +307,25 @@ class CLI(cmd.Cmd):
       return False
     commands.setGMGroup(int(self.cmdTokens[1]), int(self.cmdTokens[2]), float(self.cmdTokens[3]))
 
+  def do_send_all_fraction(self, line):
+    if(self.nArgs != 2): 
+      self.default(line)
+      return False
+    mes = raw_input(greenText("Type the message:"))
+    commands.sendAllFraction(int(self.cmdTokens[1]), int(self.cmdTokens[2]), mes)
+
+  def do_onboard_influencer(self, line):
+    if(self.nArgs != 1): 
+      self.default(line)
+      return False
+    fn = self.cmdTokens[1]
+    try:
+      with open(fn, 'r') as infJSONFile:
+        infData = json.load(infJSONFile)    
+      commands.onboardInf(infData)
+    except Exception as e:
+      print redText("Wrong File")
+
   def default(self, line):
     print redText("the command " + line + " was not found.")
     self.printOptions()
@@ -333,7 +353,7 @@ def getBaseUrl(argv):
   elif len(argv) > 1 and argv[1] == "prod":
     return "http://node-beast-prod.herokuapp.com/api/cli"
   elif len(argv) > 1 and argv[1] == "local":
-    return "https://ffe30f0c.ngrok.io/api/cli"
+    return "https://d6299991.ngrok.io/api/cli"
   else:
     return "http://node-beast-dev.herokuapp.com/api/cli"
 
@@ -344,5 +364,4 @@ if __name__ == '__main__':
   cli.printOptions()  
   cli.prompt = greenText("(CLI)>>> ")
   cli.cmdloop()
-
 
