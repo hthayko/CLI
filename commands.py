@@ -380,21 +380,16 @@ def setGMGroup(groupId, topicId, threshold):
   else:
     print greenText("Set group '{}' for {} message(s)".format(groupId, len(batchSetData)))
 
-def sendAllFraction(infId, percent, message):
-  if not(percent % 10 == 0 and percent > 0 and percent <= 100):
-    print redText("Percent should be multiple of 10, in between 10 and 100")
-    return
+def sendAllFraction(infId, pn, message):
   sentToCount = 0
-  for i in range(percent / 10):
-    resp = requests.put(baseUrl + "/send_message_to_convs_by_pn_end", json = {
-      "number_ending" : i,
-      "message" : message,
-      "influencer_id" : infId
-      })
-    if not checkStatus(resp):
-      return
-    sentToCount += resp.json()["count"]
-    print greenText("Sent to {}%".format((i + 1) * 10))
+  resp = requests.put(baseUrl + "/send_message_to_convs_by_pn_end", json = {
+    "number_ending" : pn,
+    "message" : message,
+    "influencer_id" : infId
+    })
+  if not checkStatus(resp):
+    return
+  sentToCount += resp.json()["count"]
   print greenText("DONE: Sent to {} users".format(sentToCount))
 
 def onboardInf(infData):

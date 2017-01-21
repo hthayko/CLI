@@ -135,8 +135,8 @@ commandsInfo = [
     },    
     {
     "name" : "send_all_fraction",
-    "params" : "<inf_id> <percent>", 
-    "description" : "do message all for <inf_id>, percent should be multiples of 10"
+    "params" : "<inf_id> <pn_end>", 
+    "description" : "do message all for <inf_id>, only to users who have soecific phone number ending"
     },    
     {
     "name" : "topics",
