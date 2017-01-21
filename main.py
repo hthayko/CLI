@@ -89,10 +89,15 @@ commandsInfo = [
     "description" : "add new bfnl cards"
     },
     {
+    "name" : "new_card_gm",
+    "params" : "<inf_id> <cat_id>", 
+    "description" : "add new gm card for given category"
+    },    
+    {
     "name" : "new_card_outbound",
     "params" : "<inf_id>", 
     "description" : "add new outbound card"
-    },
+    },    
     {
     "name" : "onboard_influencer",
     "params" : "<fn>", 
@@ -123,6 +128,11 @@ commandsInfo = [
     "params" : "<inf_id>", 
     "description" : "send custom push notification to influencer"
     },
+    {
+    "name" : "send_push_engage",
+    "params" : "<inf_id>", 
+    "description" : "send custom push notification to influencer, that will take to engage cards"
+    },    
     {
     "name" : "send_all_fraction",
     "params" : "<inf_id> <percent>", 
@@ -178,6 +188,13 @@ class CLI(cmd.Cmd):
       self.default(line)
       return False
     commands.newCardBFNL(int(self.cmdTokens[1]))
+
+  def do_new_card_gm(self, line):
+    if (self.nArgs != 2):
+      self.default(line)
+      return False
+    commands.newCardGM(int(self.cmdTokens[1]), int(self.cmdTokens[2]))
+    
 
   def do_new_card_outbound(self, line):
     if (self.nArgs != 1):
@@ -257,6 +274,13 @@ class CLI(cmd.Cmd):
     message = raw_input(greenText("Type the push message:"))      
     commands.sendPush(int(self.cmdTokens[1]), message)
 
+  def do_send_push_engage(self, line):
+    if(self.nArgs != 1):
+      self.default(line)
+      return False
+    message = raw_input(greenText("Type the push message:"))      
+    commands.sendPushEngage(int(self.cmdTokens[1]), message)
+
   def do_cards_bfnl(self, line):
     if(self.nArgs != 1):
       self.default(line)
@@ -324,7 +348,7 @@ class CLI(cmd.Cmd):
         infData = json.load(infJSONFile)    
       commands.onboardInf(infData)
     except Exception as e:
-      print redText("Wrong File")
+      print redText(e)
 
   def default(self, line):
     print redText("the command " + line + " was not found.")
