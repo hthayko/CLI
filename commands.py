@@ -21,6 +21,7 @@ def getMessages(infId, limit = 1000):
     jsonData = resp.json()["data"]
     messages = messages + jsonData["messages"]
     offset += len(jsonData["messages"])
+    print "[DEBUG] Got {} messages".format(len(jsonData["messages"]))
     if len(jsonData["messages"]) == 0:
       break
   return messages
@@ -119,33 +120,8 @@ def getConversations(convIds):
 
 def listConv(convIds):
   convs = getConversations(convIds)
-  for (convId, conv) in data.iteritems():
+  for (convId, conv) in convs.iteritems():
     printNiceConv(conv)
-
-def newCardBFNL(infId):
-  resp = requests.get(baseUrl + "/bfnl/" + str(infId), params = {
-    "limit" : 100
-    })
-  if not checkStatus(resp):
-    return
-  data = resp.json()["data"]
-  bfnlCardsMade = 0
-  convIds = [c["conversation_id"] for c in data]
-  if len(convIds) == 0:
-    print redText("No Conversations found")
-    return
-  for i in range(0, len(convIds)):
-    cId = convIds[i]
-    conv = getConversations([cId])
-    printNiceConv(conv[str(cId)])
-    userInput = raw_input(greenText("Make a BFNL card? (Y/N/exit)"))
-    if userInput == "Y":      
-      addNewCardBFNL(infId, cId)
-      bfnlCardsMade += 1
-      print greenText("{} cards made so far".format(bfnlCardsMade))
-    elif userInput == "exit":
-      print greenText("{} cards made so far".format(bfnlCardsMade))
-      break
 
 def addCatHelper(infId, catName, catDisplayName, isCard):
   if catDisplayName == "" or catName == "":
@@ -182,7 +158,7 @@ def runLDA(infId, k, useN):
     ldaManager.runLDA(None, k, useN)
   else:
     messagesInfo = getMessages(infId)
-    print "[DEBUG] Got {} messages".format(len(messagesInfo))
+    print "[DEBUG] Got {} total messages".format(len(messagesInfo))
     messages = [m["message"].encode('utf-8') for m in messagesInfo]
     ids = [m["id"] for m in messagesInfo]
     ldaManager.runLDA((messages, ids), k, useN)   
@@ -253,6 +229,15 @@ def sendPush(infId, message):
     return
   print greenText("DONE")
 
+def sendPushEngage(infId, message):
+  resp = requests.post(baseUrl + "/sendPush/engage/" + str(infId), json = {
+    "message" : message
+    })
+  if not checkStatus(resp):
+    return
+  print greenText("DONE")
+
+
 def addNewCardBFNL(infId, convId):
   resp = requests.post(baseUrl + "/new_card", json = {
     "influencer_id" : infId,
@@ -261,6 +246,40 @@ def addNewCardBFNL(infId, convId):
     })
   if not checkStatus(resp):
     return
+
+def newCardBFNL(infId):
+  resp = requests.get(baseUrl + "/bfnl/" + str(infId), params = {
+    "limit" : 100
+    })
+  if not checkStatus(resp):
+    return
+  data = resp.json()["data"]
+  bfnlCardsMade = 0
+  convIds = [c["conversation_id"] for c in data]
+  if len(convIds) == 0:
+    print redText("No Conversations found")
+    return
+  for i in range(0, len(convIds)):
+    cId = convIds[i]
+    conv = getConversations([cId])
+    printNiceConv(conv[str(cId)])
+    userInput = raw_input(greenText("Make a BFNL card? (Y/N/exit)"))
+    if userInput == "Y":      
+      addNewCardBFNL(infId, cId)
+      bfnlCardsMade += 1
+      print greenText("{} cards made so far".format(bfnlCardsMade))
+    elif userInput == "exit":
+      print greenText("{} cards made so far".format(bfnlCardsMade))
+      break
+
+def newCardGM(infId, catId):
+  resp = requests.post(baseUrl + "/new_card/grouped_message", json = {
+    "influencer_id" : infId,
+    "group_id" : catId
+    })
+  if not checkStatus(resp):
+    return
+  print greenText("DONE")
 
 def newCardOutbound(infId, omPrompt):
   resp = requests.post(baseUrl + "/new_card", json = {
@@ -379,6 +398,7 @@ def sendAllFraction(infId, percent, message):
   print greenText("DONE: Sent to {} users".format(sentToCount))
 
 def onboardInf(infData):
+  pprint (infData)
   resp = requests.post(baseUrl + "/add_onboarding_info", json = infData)
   if not checkStatus(resp):
     return
