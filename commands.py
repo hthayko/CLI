@@ -68,7 +68,7 @@ def checkStatus(resp):
       raise Exception("ERROR: status of the request is:" + respObj["status"])
   except Exception as e:
     print redText("Bad Request")
-    # print redText(str(e))
+    print redText(str(e))
     # traceback.print_exc()
     return False
   return True
@@ -272,10 +272,11 @@ def newCardBFNL(infId):
       print greenText("{} cards made so far".format(bfnlCardsMade))
       break
 
-def newCardGM(infId, catId):
+def newCardGM(infId, catId, fansNum):
   resp = requests.post(baseUrl + "/new_card/grouped_message", json = {
     "influencer_id" : infId,
-    "group_id" : catId
+    "group_id" : catId,
+    "message" : "We expect that {} fans will send you this message".format(fansNum)
     })
   if not checkStatus(resp):
     return
@@ -392,9 +393,11 @@ def sendAllFraction(infId, pn, message):
   sentToCount += resp.json()["count"]
   print greenText("DONE: Sent to {} users".format(sentToCount))
 
-def onboardInf(infData):
-  pprint (infData)
-  resp = requests.post(baseUrl + "/add_onboarding_info", json = infData)
+def onboardInf(twitterHandle, infData):
+  resp = requests.post(baseUrl + "/onboarding", json = {
+    "twitter_username" : twitterHandle,
+    "info" : infData
+    })
   if not checkStatus(resp):
     return
   print greenText("DONE")

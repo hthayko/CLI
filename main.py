@@ -90,8 +90,8 @@ commandsInfo = [
     },
     {
     "name" : "new_card_gm",
-    "params" : "<inf_id> <cat_id>", 
-    "description" : "add new gm card for given category"
+    "params" : "<inf_id> <cat_id> <numFans>", 
+    "description" : "add new gm card for given category that has <numFans> fans"
     },    
     {
     "name" : "new_card_outbound",
@@ -100,7 +100,7 @@ commandsInfo = [
     },    
     {
     "name" : "onboard_influencer",
-    "params" : "<fn>", 
+    "params" : "<twitter>", 
     "description" : "send the new influencer config file to server"
     },    
     {
@@ -190,10 +190,10 @@ class CLI(cmd.Cmd):
     commands.newCardBFNL(int(self.cmdTokens[1]))
 
   def do_new_card_gm(self, line):
-    if (self.nArgs != 2):
+    if (self.nArgs != 3):
       self.default(line)
       return False
-    commands.newCardGM(int(self.cmdTokens[1]), int(self.cmdTokens[2]))
+    commands.newCardGM(int(self.cmdTokens[1]), int(self.cmdTokens[2]), int(self.cmdTokens[3]))
     
 
   def do_new_card_outbound(self, line):
@@ -342,11 +342,12 @@ class CLI(cmd.Cmd):
     if(self.nArgs != 1): 
       self.default(line)
       return False
-    fn = self.cmdTokens[1]
+    twitterHandle = self.cmdTokens[1]
+    fn =  "./onboarding_files/{}.json".format(twitterHandle);
     try:
       with open(fn, 'r') as infJSONFile:
         infData = json.load(infJSONFile)    
-      commands.onboardInf(infData)
+      commands.onboardInf(twitterHandle, infData)
     except Exception as e:
       print redText(e)
 
