@@ -260,8 +260,10 @@ def newCardBFNL(infId):
     print redText("No Conversations found")
     return
   for i in range(0, len(convIds)):
-    cId = convIds[i]
+    cId = convIds[i]    
     conv = getConversations([cId])
+    if(not conv[str(cId)][0]["sent_by_user"]):
+      continue
     printNiceConv(conv[str(cId)])
     userInput = raw_input(greenText("Make a BFNL card? (Y/N/exit)"))
     if userInput == "Y":      
