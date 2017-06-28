@@ -8,6 +8,7 @@ class LDAManager :
     self.messages = []
     self.mesTrain = []
     self.influencers = []
+    self.modelVocab = None    
     self.model = None
     self.modelMessages = None
 
@@ -32,12 +33,12 @@ class LDAManager :
     for i in range(n):
       mes = messages[i]
       for w in mes.rsplit(" "):
-        if w != "":
+        if w in vWordIndex:
           dataX[i][vWordIndex[w]] = dataX[i][vWordIndex[w]] + 1
     return dataX
 
 
-  def runLDA(self, mesData, k = 10, useN = 100):
+  def runLDA(self, mesData, k = 10, useN = 100, freqToLeave = (0.001, 0.15)):
     self.model = lda.LDA(n_topics = k, n_iter = 150, random_state = 1)
     if mesData is None: # use default data for demo purposes    
       self.readData()
@@ -47,11 +48,15 @@ class LDAManager :
     mesTrain = self.messages[:useN]    
     vocab = list(set([w for m in mesTrain for w in m.rsplit(" ")]))
     vocab = [v for v in vocab if v != ""]
+    print("[DEBUG] compiled vocabulary of size: {}".format(len(vocab)))
+    vocab = self.removeStopwords(vocab, mesTrain, freqToLeave)
+    print("[DEBUG] after removing stopwords got vocabulary of size: {}".format(len(vocab)))
     vocab.sort()
+    print("[DEBUG] sorted vocabulary of size: {}".format(len(vocab)))    
     dataX = self.getDataMatrix(mesTrain, vocab)
     self.modelMessages = mesTrain
     self.modelVocab = vocab
-    self.model.fit(dataX)  # model.fit_transform(X) is also available
+    self.model.fit_transform(dataX)  # model.fit_transform(X) is also available
     self.mesTopic = [self.model.doc_topic_[i].argmax() for i in range(len(self.modelMessages))]
     self.topicCounts = numpy.zeros(shape=(k), dtype=int)
     for t in self.mesTopic:
@@ -86,3 +91,25 @@ class LDAManager :
           topic, mAcc))
     else:
       return [(m[0], m[2]) for m in bestOf]
+
+  def removeStopwords(self, vocab, docs, toLeave):
+    N = len(vocab)
+    M = len(docs)
+    freq = numpy.zeros(shape=N)
+    vWordIndex = dict((vocab[i], i) for i in range(N))
+    for i in range(M):
+      mes = docs[i]
+      for w in mes.rsplit(" "):
+        if w in vWordIndex:
+          freq[vWordIndex[w]] += 1
+    
+    newVocab = [vocab[i] for (i, f) in enumerate(freq) \
+      if f > M * toLeave[0] and f < M * toLeave[1]]
+    return newVocab
+
+  def lowerCase(self, docs):
+    return [" ".join([w.lower() for w in m.split(" ")]) for m in docs]
+
+  def getVocabInds(self, doc, vocab):
+    return [self.modelVocabWordIndex[w] for w in doc.split(" ") \
+      if w in self.modelVocabWordIndex]

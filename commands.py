@@ -5,14 +5,14 @@ from LDAManager import LDAManager
 import traceback
 from pprint import pprint
 
-baseUrl = "http://node-beast-dev.herokuapp.com/api/cli" # will be overridden by main
+baseUrl = "http://node-beast-dev.herokuapp.com" # will be overridden by main
 ldaManager = LDAManager()
 
 def getMessages(infId, limit = 1000):
   offset = 0
   messages = []
   while 1:
-    resp = requests.get(baseUrl + "/get_phrases_with_cli_status", params={
+    resp = requests.get(baseUrl + "/api/cli/get_phrases_with_cli_status", params={
       "influencer_id" : infId, 
       "limit" : limit, 
       "offset" : offset})
@@ -30,7 +30,7 @@ def getGMCardMessages(cardId, limit = 1000):
   offset = 0
   messages = []
   while 1:
-    resp = requests.get(baseUrl + "/card/answers/" + str(cardId), params={
+    resp = requests.get(baseUrl + "/api/cli/card/answers/" + str(cardId), params={
       "limit" : limit, 
       "offset" : offset})
     if not checkStatus(resp):
@@ -74,7 +74,7 @@ def checkStatus(resp):
   return True
 
 def listInfluencers():
-  resp = requests.get(baseUrl + "/get_all_influencers")
+  resp = requests.get(baseUrl + "/api/cli/get_all_influencers")
   if not checkStatus(resp):
     return
   data = resp.json()["data"]  
@@ -84,7 +84,7 @@ def listInfluencers():
   print greenText("DONE")
 
 def listCategories(infId):
-  resp = requests.get(baseUrl + "/get_cats_by_influencer", params={
+  resp = requests.get(baseUrl + "/api/cli/get_cats_by_influencer", params={
     "influencer_id" : infId, 
     "limit" : 100, 
     "offset" : 0})
@@ -97,7 +97,7 @@ def listCategories(infId):
   print greenText("DONE")
 
 def listResponses(infId, catId):
-  resp = requests.get(baseUrl + "/get_resps_by_cat_inf", params = {
+  resp = requests.get(baseUrl + "/api/cli/get_resps_by_cat_inf", params = {
     "influencer_id" : infId, 
     "category_id" : catId, 
     "limit" : 100, 
@@ -110,7 +110,7 @@ def listResponses(infId, catId):
   print greenText("DONE")
 
 def getConversations(convIds):
-  resp = requests.get(baseUrl + "/chats/conversations", params = {
+  resp = requests.get(baseUrl + "/api/cli/chats/conversations", params = {
     "conversation_ids[]" : convIds, 
     "limit" : 100})
   if not checkStatus(resp):
@@ -127,7 +127,7 @@ def addCatHelper(infId, catName, catDisplayName, isCard):
   if catDisplayName == "" or catName == "":
     print redText("category name or display name cannot be empty")
     return 
-  resp = requests.post(baseUrl + "/add_cat_by_name_inf", json = {
+  resp = requests.post(baseUrl + "/api/cli/add_cat_by_name_inf", json = {
     "influencer_id" : infId, 
     "category_name" : catName,
     "display_name" : catDisplayName,
@@ -145,7 +145,7 @@ def addCategory(infId, catName, catDisplayName):
   addCatHelper(infId, catName, catDisplayName, False)
 
 def addResponse(catId, response):
-  resp = requests.post(baseUrl + "/category/add_response", json = {
+  resp = requests.post(baseUrl + "/api/cli/category/add_response", json = {
     "id" : catId,
     "message" : response
     })
@@ -153,7 +153,7 @@ def addResponse(catId, response):
     return
   print greenText("DONE")
 
-def runLDA(infId, k, useN):
+def runLDA(infId, k, useN, freqToLeave):
   if infId == -1:
     ldaManager.runLDA(None, k, useN)
   else:
@@ -161,7 +161,7 @@ def runLDA(infId, k, useN):
     print "[DEBUG] Got {} total messages".format(len(messagesInfo))
     messages = [m["message"].encode('utf-8') for m in messagesInfo]
     ids = [m["id"] for m in messagesInfo]
-    ldaManager.runLDA((messages, ids), k, useN)   
+    ldaManager.runLDA((messages, ids), k, useN, freqToLeave)   
   ldaTopics()
 
 def runLDAForGMCard(cardId, k, useN):
@@ -192,7 +192,7 @@ def listMessages(infId):
   print greenText("Fetched {} messages".format(len(messages)))
 
 def setCat(catId, mesId):
-  resp = requests.put(baseUrl + "/update_cli_messages", json = {
+  resp = requests.put(baseUrl + "/api/cli/update_cli_messages", json = {
     mesId : catId
     })
   if not checkStatus(resp):
@@ -200,7 +200,7 @@ def setCat(catId, mesId):
   print greenText("DONE")
 
 def promptInf(infId, catId):  
-  resp = requests.put(baseUrl + "/prompt_influencer_by_cat_id", json = {
+  resp = requests.put(baseUrl + "/api/cli/prompt_influencer_by_cat_id", json = {
     "influencer_id" : infId,
     "category_id" : catId
     })
@@ -214,14 +214,14 @@ def setCatBatch(catId, topicId, threshold):
     return  
   bestByTopic = ldaManager.getBestByTopic(topicId, {"threshold" : threshold})
   batchSetData = dict((m[0], catId) for m in bestByTopic)
-  resp = requests.put(baseUrl + "/update_cli_messages", json = batchSetData)
+  resp = requests.put(baseUrl + "/api/cli/update_cli_messages", json = batchSetData)
   if not checkStatus(resp):
     return
   else:
     print greenText("Set category '{}' for {} message(s)".format(catId, len(batchSetData)))
 
 def sendPush(infId, message):
-  resp = requests.get(baseUrl + "/sendPush", params = {
+  resp = requests.get(baseUrl + "/api/cli/sendPush", params = {
     "influencer_id" : infId,
     "message" : message
     })
@@ -230,7 +230,7 @@ def sendPush(infId, message):
   print greenText("DONE")
 
 def sendPushEngage(infId, message):
-  resp = requests.post(baseUrl + "/sendPush/engage/" + str(infId), json = {
+  resp = requests.post(baseUrl + "/api/cli/sendPush/engage/" + str(infId), json = {
     "message" : message
     })
   if not checkStatus(resp):
@@ -239,7 +239,7 @@ def sendPushEngage(infId, message):
 
 
 def addNewCardBFNL(infId, convId):
-  resp = requests.post(baseUrl + "/new_card", json = {
+  resp = requests.post(baseUrl + "/api/cli/new_card", json = {
     "influencer_id" : infId,
     "type" : "conversation",
     "conversation_id" : convId
@@ -248,7 +248,7 @@ def addNewCardBFNL(infId, convId):
     return
 
 def newCardBFNL(infId):
-  resp = requests.get(baseUrl + "/bfnl/" + str(infId), params = {
+  resp = requests.get(baseUrl + "/api/cli/bfnl/" + str(infId), params = {
     "limit" : 100
     })
   if not checkStatus(resp):
@@ -275,17 +275,17 @@ def newCardBFNL(infId):
       break
 
 def newCardGM(infId, catId, fansNum):
-  resp = requests.post(baseUrl + "/new_card/grouped_message", json = {
+  resp = requests.post(baseUrl + "/api/cli/new_card/grouped_message", json = {
     "influencer_id" : infId,
     "group_id" : catId,
-    "message" : "We expect that {} fans will send you this message".format(fansNum)
+    "message" : "fans asked you:"
     })
   if not checkStatus(resp):
     return
   print greenText("DONE")
 
 def newCardOutbound(infId, omPrompt):
-  resp = requests.post(baseUrl + "/new_card", json = {
+  resp = requests.post(baseUrl + "/api/cli/new_card", json = {
     "influencer_id" : infId,
     "type" : "message_all",
     "relevant_info" : omPrompt
@@ -295,7 +295,7 @@ def newCardOutbound(infId, omPrompt):
   print greenText("DONE")
 
 def listBFNLCards(infId):
-  resp = requests.get(baseUrl + "/cards/" + str(infId), params = {
+  resp = requests.get(baseUrl + "/api/cli/cards/" + str(infId), params = {
     "is_active" : True,
     "state" : "new"
     })
@@ -310,7 +310,7 @@ def listBFNLCards(infId):
 
 
 def listGMCardsHelper(infId, isActive, state):
-  resp = requests.get(baseUrl + "/cards/" + str(infId), params = {
+  resp = requests.get(baseUrl + "/api/cli/cards/" + str(infId), params = {
     "is_active" : isActive,
     "state" : state
     })
@@ -325,7 +325,7 @@ def listGMCards(infId):
   listGMCardsHelper(infId, True, "new")
 
 def showGMCard(gmCard):
-  resp = requests.get(baseUrl + "/cards/grouped_message/" + str(gmCard["card_id"]), params = {})
+  resp = requests.get(baseUrl + "/api/cli/cards/grouped_message/" + str(gmCard["card_id"]), params = {})
   if not checkStatus(resp):
     return
   data = resp.json()["data"]
@@ -340,7 +340,7 @@ def showGMCard(gmCard):
       print greenText(g["response"][0])
 
 def listOMCards(infId):
-  resp = requests.get(baseUrl + "/cards/" + str(infId), params = {
+  resp = requests.get(baseUrl + "/api/cli/cards/" + str(infId), params = {
     "is_active" : True,
     "state" : "new"
     })
@@ -360,7 +360,7 @@ def listRevivableGMCards(infId):
   listGMCardsHelper(infId, True, "done")
 
 def reopenGMCard(cardId, groupId):
-  resp = requests.post(baseUrl + "/reopen_card", json = {
+  resp = requests.post(baseUrl + "/api/cli/reopen_card", json = {
     "card_id" : cardId, 
     "group_id" : groupId
     })
@@ -377,7 +377,7 @@ def setGMGroup(groupId, topicId, threshold):
     return  
   bestByTopic = ldaManager.getBestByTopic(topicId, {"threshold" : threshold})
   batchSetData = dict((m[0], groupId) for m in bestByTopic)
-  resp = requests.put(baseUrl + "/update_cli_messages", json = batchSetData)
+  resp = requests.put(baseUrl + "/api/cli/update_cli_messages", json = batchSetData)
   if not checkStatus(resp):
     return
   else:
@@ -385,7 +385,7 @@ def setGMGroup(groupId, topicId, threshold):
 
 def sendAllFraction(infId, pn, message):
   sentToCount = 0
-  resp = requests.put(baseUrl + "/send_message_to_convs_by_pn_end", json = {
+  resp = requests.put(baseUrl + "/api/cli/send_message_to_convs_by_pn_end", json = {
     "number_ending" : pn,
     "message" : message,
     "influencer_id" : infId
@@ -396,7 +396,7 @@ def sendAllFraction(infId, pn, message):
   print greenText("DONE: Sent to {} users".format(sentToCount))
 
 def onboardInf(twitterHandle, infData):
-  resp = requests.post(baseUrl + "/onboarding", json = {
+  resp = requests.post(baseUrl + "/api/cli/onboarding", json = {
     "twitter_username" : twitterHandle,
     "info" : infData
     })
@@ -404,4 +404,18 @@ def onboardInf(twitterHandle, infData):
     return
   print greenText("DONE")
 
+def genActivationCode(desc):
+  resp = requests.post(baseUrl + "/api/activation/generate", json = {
+    "description" : desc
+    })
+  if not checkStatus(resp):
+    return
+  print greenText("DONE")
 
+def verifyInf(infId):
+  resp = requests.post(baseUrl + "/api/activation/activate", json = {
+    "influencer_id" : infId
+    })
+  if not checkStatus(resp):
+    return
+  print greenText("DONE")

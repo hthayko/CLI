@@ -44,6 +44,11 @@ commandsInfo = [
     "description" : "see particular conv. with <conv_id>"
     },
     {
+    "name" : "gen_activation_code",
+    "params" : "", 
+    "description" : "generate activation code"
+    },
+    {
     "name" : "gm_revivable",
     "params" : "<inf_id>", 
     "description" : "list GM cards that can be revived"
@@ -75,7 +80,7 @@ commandsInfo = [
     },
     {
     "name" : "LDA",
-    "params" : "<inf_id> <k>", 
+    "params" : "<inf_id> <k> <p_l> <p_u>", 
     "description" : "run LDA with k topics for influencer's messages"
     },
     {
@@ -148,6 +153,11 @@ commandsInfo = [
     "params" : "<k> <n>:", 
     "description" : "show topic k with its best n samples"
     },
+    {
+    "name" : "verify_inf",
+    "params" : "<inf_id>:",
+    "description" : "verify the influencer"
+    },    
     {
     "name" : "exit",
     "params": "", 
@@ -243,10 +253,11 @@ class CLI(cmd.Cmd):
     commands.setCatBatch(int(self.cmdTokens[1]), int(self.cmdTokens[2]), float(self.cmdTokens[3]))
 
   def do_LDA(self, line):
-    if(self.nArgs != 2): 
+    if(self.nArgs != 4): 
       self.default(line)
       return False
-    commands.runLDA(int(self.cmdTokens[1]), int(self.cmdTokens[2]), 100000)
+    p_l, p_u = float(self.cmdTokens[3]), float(self.cmdTokens[4])      
+    commands.runLDA(int(self.cmdTokens[1]), int(self.cmdTokens[2]), 100000, (p_l, p_u))
     # commands.runLDA(None, int(self.cmdTokens[1]), 100000)
 
   def do_topics(self, line):
@@ -278,7 +289,7 @@ class CLI(cmd.Cmd):
     if(self.nArgs != 1):
       self.default(line)
       return False
-    message = raw_input(greenText("Type the push message:"))      
+    message = raw_input(greenText("Type the push message:"))
     commands.sendPushEngage(int(self.cmdTokens[1]), message)
 
   def do_cards_bfnl(self, line):
@@ -298,6 +309,14 @@ class CLI(cmd.Cmd):
       self.default(line)
       return False
     commands.listOMCards(int(self.cmdTokens[1]))
+
+  def do_gen_activation_code(self, line):
+    if(self.nArgs != 0):
+      self.default(line)
+      return False
+    desc = raw_input(greenText("Type description for the new activation code:"))
+    commands.genActivationCode(desc)
+
 
   def do_gm_revivable(self, line):
     if(self.nArgs != 1):
@@ -338,6 +357,13 @@ class CLI(cmd.Cmd):
     mes = raw_input(greenText("Type the message:"))
     commands.sendAllFraction(int(self.cmdTokens[1]), int(self.cmdTokens[2]), mes)
 
+  def do_verify_inf(self, line):
+    if(self.nArgs != 1):
+      self.default(line)
+      return False
+    commands.verifyInf(int(self.cmdTokens[1]))
+
+
   def do_onboard_influencer(self, line):
     if(self.nArgs != 1): 
       self.default(line)
@@ -374,13 +400,13 @@ class CLI(cmd.Cmd):
 
 def getBaseUrl(argv):
   if len(argv) > 1 and argv[1] == "staging":
-    return "http://node-beast-staging.herokuapp.com/api/cli"
+    return "http://node-beast-staging.herokuapp.com"
   elif len(argv) > 1 and argv[1] == "prod":
-    return "http://node-beast-prod.herokuapp.com/api/cli"
+    return "http://node-beast-prod.herokuapp.com"
   elif len(argv) > 1 and argv[1] == "local":
-    return "https://d6299991.ngrok.io/api/cli"
+    return "https://d6299991.ngrok.io"
   else:
-    return "http://node-beast-dev.herokuapp.com/api/cli"
+    return "http://node-beast-dev.herokuapp.com"
 
 
 if __name__ == '__main__':
