@@ -395,6 +395,20 @@ def sendAllFraction(infId, pn, message):
   sentToCount += resp.json()["count"]
   print greenText("DONE: Sent to {} users".format(sentToCount))
 
+def sendAllPattern(infId, pn_pattern, message):
+  sentToCount = 0
+  resp = requests.put(baseUrl + "/api/cli/send_message_to_convs_by_pn_pattern", json = {
+    "number_pattern" : pn_pattern, # gotata be in format like '+1650%'
+    "message" : message,
+    "influencer_id" : infId
+    })
+  if not checkStatus(resp):
+    return
+  sentToCount += resp.json()["count"]
+  print greenText("DONE: Sent to {} users".format(sentToCount))
+
+
+
 def onboardInf(twitterHandle, infData):
   resp = requests.post(baseUrl + "/api/cli/onboarding", json = {
     "twitter_username" : twitterHandle,

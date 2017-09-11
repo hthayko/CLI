@@ -6,6 +6,7 @@ import traceback
 import cmd
 import json
 from pprint import pprint
+import readline
 
 commandsInfo = [
   {
@@ -138,11 +139,16 @@ commandsInfo = [
     "params" : "<inf_id>", 
     "description" : "send custom push notification to influencer, that will take to engage cards"
     },    
+    # {
+    # "name" : "send_all_fraction",
+    # "params" : "<inf_id> <pn_end>", 
+    # "description" : "do message all for <inf_id>, only to users who have soecific phone number ending"
+    # },
     {
-    "name" : "send_all_fraction",
-    "params" : "<inf_id> <pn_end>", 
-    "description" : "do message all for <inf_id>, only to users who have soecific phone number ending"
-    },    
+    "name" : "send_all_pattern",
+    "params" : "<inf_id> <pn_pattern>", 
+    "description" : "do message all for <inf_id>, only to users who have specific ph pattern"
+    },
     {
     "name" : "topics",
     "params": "", 
@@ -350,12 +356,19 @@ class CLI(cmd.Cmd):
       return False
     commands.setGMGroup(int(self.cmdTokens[1]), int(self.cmdTokens[2]), float(self.cmdTokens[3]))
 
-  def do_send_all_fraction(self, line):
+  # def do_send_all_fraction(self, line):
+  #   if(self.nArgs != 2): 
+  #     self.default(line)
+  #     return False
+  #   mes = raw_input(greenText("Type the message:"))
+  #   commands.sendAllFraction(int(self.cmdTokens[1]), self.cmdTokens[2], mes)
+
+  def do_send_all_pattern(self, line):
     if(self.nArgs != 2): 
       self.default(line)
       return False
     mes = raw_input(greenText("Type the message:"))
-    commands.sendAllFraction(int(self.cmdTokens[1]), int(self.cmdTokens[2]), mes)
+    commands.sendAllFraction(int(self.cmdTokens[1]), self.cmdTokens[2], mes)
 
   def do_verify_inf(self, line):
     if(self.nArgs != 1):
