@@ -368,7 +368,7 @@ class CLI(cmd.Cmd):
       self.default(line)
       return False
     mes = raw_input(greenText("Type the message:"))
-    commands.sendAllFraction(int(self.cmdTokens[1]), self.cmdTokens[2], mes)
+    commands.sendAllPattern(int(self.cmdTokens[1]), self.cmdTokens[2], mes)
 
   def do_verify_inf(self, line):
     if(self.nArgs != 1):
