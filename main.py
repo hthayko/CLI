@@ -115,6 +115,11 @@ commandsInfo = [
     "description" : "prompt influencer to respond to category"
     },
     {
+    "name" : "import_users",
+    "params" : "<inf_id> <csv_path> " ,
+    "description" : "import users from a csv file for <inf_id>"
+    },    
+    {
     "name" : "resp",
     "params" : "<inf_id> <cat_id>", 
     "description" : "see list of responses for influencers category"
@@ -163,7 +168,7 @@ commandsInfo = [
     "name" : "verify_inf",
     "params" : "<inf_id>:",
     "description" : "verify the influencer"
-    },    
+    },
     {
     "name" : "exit",
     "params": "", 
@@ -283,6 +288,13 @@ class CLI(cmd.Cmd):
       self.default(line)
       return False
     commands.promptInf(int(self.cmdTokens[1]), int(self.cmdTokens[2]))
+
+  def do_import_users(self, line):
+    if(self.nArgs != 2): 
+      self.default(line)
+      return False
+    commands.importUsers(int(self.cmdTokens[1]), self.cmdTokens[2])
+
 
   def do_send_push(self, line):
     if(self.nArgs != 1):

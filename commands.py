@@ -4,8 +4,11 @@ import requests
 from LDAManager import LDAManager
 import traceback
 from pprint import pprint
+import csv
+import os
 
 baseUrl = "http://node-beast-dev.herokuapp.com" # will be overridden by main
+BEAST_API_AUTH_KEY = os.environ.get('BEAST_API_AUTH_KEY', 5000)
 ldaManager = LDAManager()
 
 def getMessages(infId, limit = 1000):
@@ -433,3 +436,45 @@ def verifyInf(infId):
   if not checkStatus(resp):
     return
   print greenText("DONE")
+
+def importUsers(infId, csvPath):
+  payload = []
+  with open(csvPath, 'rb') as csvfile:
+    csvReader = csv.DictReader(csvfile)
+    for row in csvReader:
+      udict = extractValidatedUser(row)
+      if udict is not None:
+        payload.append(udict)
+  if len(payload) > 0:
+    resp = requests.post(baseUrl + "/api/cli/import_users", 
+      json = {
+        "users_array" : payload,
+        "influencer_id" : infId
+        },
+      headers = {
+        "beast-api-auth" : BEAST_API_AUTH_KEY
+      })
+    if not checkStatus(resp):
+      return
+    print greenText("DONE: sent {} users for importing".format(len(payload)))
+  else:
+    print redText("Found 0 validateed users")
+
+def extractValidatedUser(fullDict):
+  ret = {};
+  ret["phone_number"] = fullDict["phone_number"]
+  ret["first_name"] = fullDict["first_name"]
+  ret["last_name"] = fullDict["last_name"]
+  ret["email"] = fullDict["email"]
+  ret["zip_code"] = fullDict["zip_code"]
+  ret["birthday"] = fullDict["birthday"]
+  return ret;
+
+
+
+
+
+
+
+
+

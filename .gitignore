@@ -5,3 +5,4 @@ node_modules
 ngrok
 *.pyc
 onboarding_files
+tmp
